@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Land Restoration Monitoring System</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--g9:#12392a;--g7:#1f6b47;--g5:#2e9e5b;--g1:#e7f3ea;--bg:#f6f9f6;--card:#fff;--tx:#16241c;--mu:#5d6f64;--ln:#dce7de;--bad:#b3402f;--warn:#b7791f}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.5}
+aside{position:fixed;inset:0 auto 0 0;width:236px;background:var(--g9);color:#dff0e4;padding:20px 14px;display:flex;flex-direction:column;gap:4px;overflow:auto}
+aside h1{font-size:15px;letter-spacing:.3px;margin:0 8px 2px;color:#fff;line-height:1.25}
+aside p{font-size:12px;margin:0 8px 16px;color:#a9cdb5}
+nav button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;color:inherit;padding:10px 12px;border-radius:8px;font:inherit;font-size:14px;cursor:pointer;transition:background .2s}
+nav button:hover{background:#ffffff14}
+nav button.on{background:var(--g5);color:#fff;font-weight:600}
+main{margin-left:236px;padding:24px 28px 60px;max-width:1300px}
+header.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+header.top h2{margin:0;font-size:22px}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:13px;padding:5px 12px;border-radius:99px;background:var(--g1);color:var(--g7);font-weight:600}
+.dot{width:9px;height:9px;border-radius:50%;background:#999}.ok .dot{background:var(--g5)}.warn .dot{background:var(--warn)}.bad .dot{background:var(--bad)}
+.grid{display:grid;gap:16px}.g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:16px 18px}
+.card h3{margin:0 0 8px;font-size:15px}
+.big{font-size:32px;font-weight:700;color:var(--g7);margin:2px 0}
+.mu{color:var(--mu);font-size:13px}
+.bar{height:8px;background:var(--g1);border-radius:9px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:var(--g5);transition:width .6s}
+.cv{position:relative;height:260px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--ln);text-align:left;white-space:nowrap}
+th{background:var(--g1);color:var(--g9);font-weight:600}
+.scroll{overflow-x:auto}
+.stats{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin:6px 0 10px}.stats b{display:block;font-size:17px;color:var(--g7)}
+section{display:none}section.on{display:block}
+input,select,textarea,button.b{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--ln);border-radius:8px;background:#fff}
+label{display:block;font-size:12px;color:var(--mu);margin:8px 0 3px}
+button.b{background:var(--g7);color:#fff;border-color:var(--g7);cursor:pointer;margin:6px 6px 0 0}button.b.alt{background:#fff;color:var(--g7)}button.b:hover{filter:brightness(1.1)}
+.row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.plots{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.plot{border:2px solid var(--ln);border-radius:12px;padding:14px;background:#fff;cursor:pointer;text-align:left;font:inherit;transition:border-color .2s,background .2s}
+.plot.on{border-color:var(--g5);background:var(--g1)}.plot b{font-size:20px}
+.tag{display:inline-block;padding:1px 9px;border-radius:99px;color:#fff;font-size:12px;font-weight:600}
+.note{background:#fff8e6;border:1px solid #f0dca4;color:#6b5314;padding:9px 12px;border-radius:8px;font-size:13px;margin-bottom:14px}
+.err{background:#fdecea;border:1px solid #f0b8b0;color:var(--bad);padding:10px 14px;border-radius:8px;margin-bottom:14px;display:none;font-size:14px}
+.tl{border-left:3px solid var(--g5);padding-left:14px;margin:0 0 14px 6px}.tl img{max-width:180px;border-radius:8px;display:block;margin-top:6px}
+.empty{color:var(--mu);font-style:italic;padding:12px 0}
+@media(max-width:820px){aside{position:static;width:auto;flex-direction:column;padding:12px}nav{display:flex;overflow-x:auto;gap:4px}nav button{white-space:nowrap;width:auto}main{margin:0;padding:16px}aside p{display:none}}
+</style>
+</head>
+<body>
+<aside>
+  <h1>LAND RESTORATION MONITORING SYSTEM</h1>
+  <p>Smart Environmental Monitoring for Sustainable Land Restoration.</p>
+  <nav id="nav"></nav>
+</aside>
+<main>
+  <header class="top"><h2 id="title"></h2><span class="pill" id="st"><i class="dot"></i><span>Connecting…</span></span></header>
+  <div class="err" id="err"></div>
+
+  <section id="dash">
+    <div class="grid g4" id="cards"></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h3>Latest readings</h3><div class="scroll" id="latest"></div></div>
+      <div class="card"><h3>Connection settings</h3>
+        <p class="mu">Channel ID 3561457 (ThingSpeak). For a private channel, enter the <b>Read</b> API key. Never enter the Write key here. The key is stored only in this browser.</p>
+        <label>Read API key (optional for public channels)</label><input id="key" type="password" autocomplete="off" style="width:100%">
+        <label>Readings to load (max 8000)</label><input id="nres" type="number" min="10" max="8000" style="width:100%">
+        <button class="b" id="save">Save and refresh</button>
+        <p class="mu">Auto-refresh every 20 s. <span id="cd"></span></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="mon">
+    <div class="note">Measured by the sensors: soil moisture (%), rain detected (yes/no) and light (dark/bright). Rainfall amount in mm is not measured.</div>
+    <div class="grid g2" id="monGrid"></div>
+  </section>
+
+  <section id="plt">
+    <div class="note">The ThingSpeak channel has no plot field. Choose the plot being measured; every reading received after you choose is tagged with that plot, and the switch is stored in this browser. Switch plots here whenever you move the sensors.</div>
+    <div class="plots" id="plotBtns"></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h3>Current selection</h3><div id="cur"></div></div>
+      <div class="card"><h3>Plot switch log</h3><div class="scroll" id="swlog"></div><button class="b alt" id="clrsw">Clear log</button></div>
+    </div>
+  </section>
+
+  <section id="cmp">
+    <div class="note">Charts and averages use only recorded sensor readings tagged to a plot. Manual observations are shown separately and are not sensor data.</div>
+    <div class="grid g2">
+      <div class="card"><h3>Average soil moisture by plot (%)</h3><div class="cv"><canvas id="cAvg"></canvas></div></div>
+      <div class="card"><h3>Rain events by plot</h3><div class="cv"><canvas id="cRain"></canvas></div></div>
+      <div class="card"><h3>Moisture retention trend by plot</h3><div class="cv"><canvas id="cRet"></canvas></div></div>
+      <div class="card"><h3>Bright-light share by plot (%)</h3><div class="cv"><canvas id="cLight"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Measured summary</h3><div class="scroll" id="cmpTab"></div></div>
+    <div class="card" style="margin-top:16px"><h3>Treatment-wise manual observations (latest per plot)</h3><div class="scroll" id="cmpObs"></div></div>
+  </section>
+
+  <section id="prg">
+    <div class="grid g2">
+      <div class="card"><h3>Record an observation</h3>
+        <div class="row">
+          <div><label>Observation date</label><input type="date" id="oDate"></div>
+          <div><label>Plot</label><select id="oPlot"></select></div>
+          <div><label>Plant growth</label><select id="oGrow"><option>Poor</option><option>Fair</option><option selected>Good</option><option>Excellent</option></select></div>
+          <div><label>Ground cover</label><select id="oGround"><option>Bare</option><option>Sparse</option><option selected>Moderate</option><option>Dense</option></select></div>
+          <div><label>Vegetation coverage est. (%)</label><input type="number" id="oCov" min="0" max="100"></div>
+          <div><label>Plant survival (%)</label><input type="number" id="oSurv" min="0" max="100"></div>
+        </div>
+        <label>Remarks</label><textarea id="oRem" rows="3" style="width:100%"></textarea>
+        <label>Photograph</label><input type="file" id="oPhoto" accept="image/*">
+        <button class="b" id="oSave">Save observation</button>
+      </div>
+      <div class="card"><h3>Coverage estimate over time (manual)</h3><div class="cv"><canvas id="cCov"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Timeline</h3><div id="tl"></div></div>
+  </section>
+
+  <section id="rep">
+    <div class="card">
+      <h3>Date range and exports</h3>
+      <div class="row"><div><label>From</label><input type="date" id="rFrom"></div><div><label>To</label><input type="date" id="rTo"></div>
+      <div><label>Summary period</label><select id="rPer"><option value="d">Daily</option><option value="w">Weekly</option></select></div></div>
+      <button class="b" id="rApply">Load range from ThingSpeak</button><button class="b alt" id="rClear">Reset to latest readings</button>
+      <button class="b alt" id="x1">CSV: readings</button><button class="b alt" id="x2">CSV: summary</button><button class="b alt" id="x3">CSV: plot report</button><button class="b alt" id="x4">CSV: observations</button>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Plot-wise report</h3><div class="scroll" id="rPlot"></div></div>
+    <div class="card" style="margin-top:16px"><h3>Daily / weekly summary</h3><div class="scroll" id="rSum"></div></div>
+    <div class="card" style="margin-top:16px"><h3>Historical sensor records (latest 200 shown)</h3><div class="scroll" id="rHist"></div></div>
+  </section>
+</main>
+
+<script>
+const CH=3561457;
+const PL={C:{n:'Control',d:'No treatment',c:'#7b8a80'},T1:{n:'Vegetation only',d:'T1',c:'#2e9e5b'},T2:{n:'Natural soil cover only',d:'T2',c:'#c9923a'},T3:{n:'Vegetation + soil cover',d:'T3',c:'#2f6fb0'}};
+const PK=Object.keys(PL);
+const VIEWS=[['dash','🏠','Dashboard'],['mon','📈','Monitoring'],['plt','🧪','Plot management'],['cmp','⚖️','Comparison'],['prg','🌱','Restoration progress'],['rep','📄','Reports']];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}};
+const SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch{alert('Browser storage is full. Delete some photo observations.');return false}};
+let cfg=LS('lr_cfg',{key:'',results:500}),sw=LS('lr_sw',[]),obs=LS('lr_obs',[]),feeds=[],range=null,view='dash',lastOk=null,busy=false,loadedOnce=false,next=20;
+const fmt=d=>d?new Date(d).toLocaleString():'—';
+const ago=d=>{if(!d)return'never';const s=Math.round((Date.now()-d)/1000);return s<90?s+' s ago':s<5400?Math.round(s/60)+' min ago':s<172800?Math.round(s/3600)+' h ago':Math.round(s/86400)+' d ago'};
+const nums=a=>a.filter(v=>v!=null&&!isNaN(v));
+const stat=a=>{a=nums(a);if(!a.length)return{n:0};return{n:a.length,min:Math.min(...a),max:Math.max(...a),avg:a.reduce((x,y)=>x+y,0)/a.length}};
+const f1=v=>v==null?'—':(+v).toFixed(1);
+function trend(a,th){a=nums(a);if(a.length<6)return'not enough data';const k=Math.max(2,Math.floor(a.length/3)),m=x=>x.reduce((p,q)=>p+q,0)/x.length,d=m(a.slice(-k))-m(a.slice(0,k));return d>th?'rising ↗':d<-th?'falling ↘':'stable →'}
+function slope(pts){if(pts.length<5)return null;const n=pts.length,mx=pts.reduce((s,p)=>s+p.x,0)/n,my=pts.reduce((s,p)=>s+p.y,0)/n;let a=0,b=0;pts.forEach(p=>{a+=(p.x-mx)*(p.y-my);b+=(p.x-mx)**2});return b?a/b*3600000:null}
+const plotAt=t=>{let p=null;for(const s of sw){if(s.ts<=t)p=s.plot;else break}return p};
+const curPlot=()=>sw.length?sw[sw.length-1].plot:null;
+const tag=p=>p?`<span class="tag" style="background:${PL[p].c}">${p}</span>`:'<span class="mu">Unassigned</span>';
+const tbl=(h,rows)=>rows.length?`<table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table>`:'<div class="empty">No data yet.</div>';
+const rainEv=a=>{let c=0,p=0;nums(a.map(f=>f.r)).forEach(v=>{if(v===1&&p===0)c++;p=v});return c};
+const brightPct=a=>{const x=nums(a.map(f=>f.l));return x.length?x.filter(v=>v===1).length/x.length*100:null};
+
+/* ---------- data ---------- */
+function setStatus(cls,txt){const e=$('#st');e.className='pill '+cls;e.querySelector('span').textContent=txt}
+function showErr(m){const e=$('#err');e.style.display=m?'block':'none';e.textContent=m||''}
+async function load(){
+  if(busy)return;busy=true;setStatus('warn','Loading…');
+  const p=new URLSearchParams();if(cfg.key)p.set('api_key',cfg.key);
+  const iso=d=>d.toISOString().slice(0,19).replace('T',' ');
+  if(range){p.set('start',iso(new Date(range.s+'T00:00:00')));p.set('end',iso(new Date(range.e+'T23:59:59')));p.set('results',8000)}else p.set('results',Math.min(8000,Math.max(10,cfg.results||500)));
+  try{
+    const r=await fetch(`https://api.thingspeak.com/channels/${CH}/feeds.json?${p}`);
+    if(r.status===429)throw Error('ThingSpeak rate limit reached. Wait a few seconds; the dashboard will retry automatically.');
+    if(r.status===400||r.status===404||r.status===401)throw Error('Channel not found or private. Enter the channel Read API key under Connection settings.');
+    if(!r.ok)throw Error('ThingSpeak returned HTTP '+r.status+'.');
+    const j=await r.json();if(!j||!j.feeds)throw Error('Unexpected response from ThingSpeak.');
+    const n=v=>v==null||v===''||isNaN(+v)?null:+v;
+    feeds=j.feeds.map(f=>({t:new Date(f.created_at),m:n(f.field1),r:n(f.field2),l:n(f.field3)}));
+    feeds.forEach(f=>f.p=plotAt(f.t.getTime()));
+    lastOk=feeds.length?feeds[feeds.length-1].t:null;loadedOnce=true;
+    showErr(feeds.length?'':'The channel returned no readings. Check that the ESP8266 is uploading, or widen the date range.');
+    refreshStatus();
+  }catch(e){showErr(e.message==='Failed to fetch'?'Cannot reach ThingSpeak. Check your internet connection (or open this file through a local server, see README).':e.message);setStatus('bad','Cloud unavailable')}
+  busy=false;next=20;render();
+}
+function refreshStatus(){
+  if(!loadedOnce)return;
+  if(!feeds.length){setStatus('warn','Connected, no data');return}
+  const s=(Date.now()-lastOk)/1000;
+  setStatus(s<90?'ok':s<600?'warn':'bad',s<90?'ESP8266 online':s<600?'ESP8266 delayed':'ESP8266 offline');
+}
+
+/* ---------- charts ---------- */
+const CHS={};
+function mk(id,cfgc){const c=document.getElementById(id);if(!c)return;if(CHS[id])CHS[id].destroy();CHS[id]=new Chart(c,cfgc)}
+const tx={type:'linear',ticks:{maxTicksLimit:6,callback:v=>new Date(v).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}};
+const ds=(label,pts,color,step)=>({label,data:pts,borderColor:color,backgroundColor:color,pointRadius:pts.length>120?0:2.5,borderWidth:2,tension:step?0:.25,stepped:step?'before':false,showLine:true});
+const line=(sets,y)=>({type:'scatter',data:{datasets:sets},options:{responsive:true,maintainAspectRatio:false,animation:false,scales:{x:tx,y:y||{}},plugins:{legend:{display:sets.length>1}}}});
+const bars=(labels,vals,cols,y)=>({type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cols}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:Object.assign({beginAtZero:true},y||{})}}});
+const pts=(a,k)=>a.filter(f=>f[k]!=null).map(f=>({x:f.t.getTime(),y:f[k]}));
+
+/* ---------- renderers ---------- */
+function latestVal(k){for(let i=feeds.length-1;i>=0;i--)if(feeds[i][k]!=null)return feeds[i][k];return null}
+function rDash(){
+  const m=latestVal('m'),r=latestVal('r'),l=latestVal('l'),s=lastOk?(Date.now()-lastOk)/1000:null;
+  const cls=m==null?'':m<30?'Low moisture':m<60?'Moderate moisture':'High moisture';
+  $('#cards').innerHTML=`
+  <div class="card"><h3>💧 Soil moisture</h3><div class="big">${m==null?'—':f1(m)+'%'}</div><div class="mu">${cls} (indicative)</div><div class="bar"><i style="width:${Math.min(100,m||0)}%"></i></div></div>
+  <div class="card"><h3>🌧️ Rain detection</h3><div class="big">${r==null?'—':r===1?'Rain detected':'No rain'}</div><div class="mu">Sensor state at last reading</div></div>
+  <div class="card"><h3>☀️ Light condition</h3><div class="big">${l==null?'—':l===1?'Bright':'Dark'}</div><div class="mu">LDR sensor state</div></div>
+  <div class="card"><h3>📡 ESP8266 status</h3><div class="big" style="font-size:24px">${s==null?'—':s<90?'Online':s<600?'Delayed':'Offline'}</div><div class="mu">Last data: ${fmt(lastOk)} (${ago(lastOk)})</div></div>
+  <div class="card"><h3>📍 Current plot</h3><div class="big">${curPlot()||'—'}</div><div class="mu">${curPlot()?PL[curPlot()].n:'Select a plot under Plot management'}</div></div>`;
+  $('#latest').innerHTML=tbl(['Time','Moisture %','Rain','Light','Plot'],feeds.slice(-8).reverse().map(f=>[fmt(f.t),f1(f.m),f.r==null?'—':f.r?'Rain':'No rain',f.l==null?'—':f.l?'Bright':'Dark',tag(f.p)]));
+  $('#key').value=cfg.key;$('#nres').value=cfg.results;
+}
+function rMon(){
+  const defs=[['m','Soil moisture (%)','#2e9e5b',0,{min:0,max:100},5],['r','Rain detection','#2f6fb0',1,{min:0,max:1,ticks:{stepSize:1,callback:v=>v?'Rain':'No rain'}},.1],['l','Light condition','#c9923a',1,{min:0,max:1,ticks:{stepSize:1,callback:v=>v?'Bright':'Dark'}},.1]];
+  $('#monGrid').innerHTML=defs.map(d=>{const a=feeds.map(f=>f[d[0]]),s=stat(a),b=d[3];
+    const st=b?`<div><b>${s.n?(d[0]==='r'?rainEv(feeds):f1(s.avg*100)+'%'):'—'}</b>${d[0]==='r'?'rain events':'time bright'}</div>`:`<div><b>${f1(s.min)}</b>minimum</div><div><b>${f1(s.max)}</b>maximum</div><div><b>${f1(s.avg)}</b>average</div>`;
+    const lm=feeds.filter(f=>f[d[0]]!=null);const lt=lm.length?lm[lm.length-1].t:null;
+    return `<div class="card"><h3>${d[1]}</h3><div class="stats">${st}<div><b style="font-size:14px">${trend(a,d[5]*(b?1:1))}</b>trend</div><div><b style="font-size:14px">${s.n}</b>readings</div></div><div class="mu">Last reading: ${fmt(lt)}</div><div class="cv"><canvas id="mc${d[0]}"></canvas></div></div>`}).join('');
+  defs.forEach(d=>mk('mc'+d[0],line([ds(d[1],pts(feeds,d[0]),d[2],d[3])],d[4])));
+}
+function rPlt(){
+  const c=curPlot();
+  $('#plotBtns').innerHTML=PK.map(k=>`<button class="plot ${c===k?'on':''}" data-p="${k}"><b style="color:${PL[k].c}">${k}</b><div><b style="font-size:15px;color:var(--tx)">${PL[k].n}</b></div><div class="mu">${k==='C'?'Control: no treatment':k==='T1'?'Vegetation only':k==='T2'?'Natural soil cover only':'Vegetation combined with natural soil cover'}</div></button>`).join('');
+  const n=feeds.filter(f=>f.p===c).length;
+  $('#cur').innerHTML=c?`<div class="big">${c} – ${PL[c].n}</div><div class="mu">Selected ${fmt(sw[sw.length-1].ts)}</div><p>${n} stored readings tagged to this plot in the loaded data.</p>`:'<div class="empty">No plot selected. Readings stay unassigned until you choose one.</div>';
+  $('#swlog').innerHTML=tbl(['Switched at','Plot'],sw.slice().reverse().slice(0,50).map(s=>[fmt(s.ts),tag(s.plot)]));
+}
+function byPlot(){return PK.map(k=>({k,a:feeds.filter(f=>f.p===k)}))}
+function rCmp(){
+  const P=byPlot(),cols=PK.map(k=>PL[k].c),lab=PK.map(k=>k+' – '+PL[k].n);
+  const none=P.every(p=>!p.a.length);
+  mk('cAvg',bars(lab,P.map(p=>stat(p.a.map(f=>f.m)).avg??0),cols,{max:100}));
+  mk('cRain',bars(lab,P.map(p=>rainEv(p.a)),cols,{ticks:{precision:0}}));
+  mk('cRet',line(P.filter(p=>p.a.length).map(p=>ds(p.k,pts(p.a,'m'),PL[p.k].c)),{min:0,max:100}));
+  mk('cLight',bars(lab,P.map(p=>brightPct(p.a)??0),cols,{max:100}));
+  $('#cmpTab').innerHTML=(none?'<div class="empty">No readings are tagged to a plot yet. Select a plot under Plot management and wait for new readings.</div>':'')+tbl(['Plot','Readings','Avg moisture %','Min %','Max %','Moisture change (%/h)','Rain events','Bright %'],P.map(p=>{const s=stat(p.a.map(f=>f.m));const sl=slope(pts(p.a,'m'));return[tag(p.k)+' '+PL[p.k].n,s.n,f1(s.avg),f1(s.min),f1(s.max),sl==null?'—':sl.toFixed(2),rainEv(p.a),f1(brightPct(p.a))]}));
+  $('#cmpObs').innerHTML=tbl(['Plot','Date','Growth','Ground cover','Coverage %','Survival %','Remarks'],PK.map(k=>{const o=obs.filter(x=>x.plot===k).sort((a,b)=>b.date.localeCompare(a.date))[0];return o?[tag(k),o.date,esc(o.grow),esc(o.ground),o.cov??'—',o.surv??'—',esc(o.rem)]:[tag(k),'No observation','','','','','']}));
+}
+function rPrg(){
+  const sel=$('#oPlot');if(!sel.options.length)sel.innerHTML=PK.map(k=>`<option value="${k}">${k} – ${PL[k].n}</option>`).join('');
+  if(!$('#oDate').value)$('#oDate').value=new Date().toISOString().slice(0,10);
+  const o=obs.slice().sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  $('#tl').innerHTML=o.length?o.map(x=>`<div class="tl"><b>${x.date}</b> ${tag(x.plot)} <span class="mu">manual observation</span><div>Growth: <b>${esc(x.grow)}</b> · Ground cover: <b>${esc(x.ground)}</b> · Coverage: <b>${x.cov??'—'}%</b> · Survival: <b>${x.surv??'—'}%</b></div>${x.rem?`<div>${esc(x.rem)}</div>`:''}${x.img?`<img src="${x.img}" alt="Field photograph">`:''}<button class="b alt" data-del="${x.id}">Delete</button></div>`).join(''):'<div class="empty">No observations yet. Record the first one using the form.</div>';
+  mk('cCov',line(PK.map(k=>{const a=obs.filter(x=>x.plot===k&&x.cov!=null).sort((p,q)=>p.date.localeCompare(q.date));return ds(k,a.map(x=>({x:new Date(x.date).getTime(),y:x.cov})),PL[k].c)}).filter(d=>d.data.length),{min:0,max:100}));
+  CHS.cCov&&(CHS.cCov.options.scales.x.ticks.callback=v=>new Date(v).toLocaleDateString(),CHS.cCov.update());
+}
+function filtered(){return feeds}
+function group(a,per){const g={};a.forEach(f=>{const d=new Date(f.t);if(per==='w'){const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w)}const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');(g[k]=g[k]||[]).push(f)});return Object.keys(g).sort().map(k=>[k,g[k]])}
+function sumRows(){const per=$('#rPer').value;return group(feeds,per).map(([k,a])=>{const s=stat(a.map(f=>f.m));return[(per==='w'?'Week of ':'')+k,s.n,f1(s.avg),f1(s.min),f1(s.max),rainEv(a),f1(brightPct(a))]})}
+const SH=['Period','Readings','Avg moisture %','Min %','Max %','Rain events','Bright %'];
+function plotRows(){return byPlot().concat([{k:null,a:feeds.filter(f=>!f.p)}]).map(p=>{const s=stat(p.a.map(f=>f.m));return[p.k||'Unassigned',s.n,f1(s.avg),f1(s.min),f1(s.max),rainEv(p.a),f1(brightPct(p.a))]})}
+function rRep(){
+  $('#rPlot').innerHTML=tbl(['Plot'].concat(SH.slice(1)),plotRows());
+  $('#rSum').innerHTML=tbl(SH,sumRows());
+  $('#rHist').innerHTML=tbl(['Time','Moisture %','Rain','Light','Plot'],feeds.slice(-200).reverse().map(f=>[fmt(f.t),f1(f.m),f.r==null?'—':f.r,f.l==null?'—':f.l,f.p||'']));
+}
+function render(){({dash:rDash,mon:rMon,plt:rPlt,cmp:rCmp,prg:rPrg,rep:rRep})[view]()}
+
+/* ---------- csv ---------- */
+function csv(name,head,rows){const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};const t=[head].concat(rows).map(r=>r.map(q).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
+
+/* ---------- events ---------- */
+$('#nav').innerHTML=VIEWS.map(v=>`<button data-v="${v[0]}">${v[1]} ${v[2]}</button>`).join('');
+function go(v){view=v;document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$('#title').textContent=VIEWS.find(x=>x[0]===v)[2];render();scrollTo(0,0)}
+$('#nav').onclick=e=>{const b=e.target.closest('button');if(b)go(b.dataset.v)};
+$('#plotBtns').onclick=e=>{const b=e.target.closest('.plot');if(!b)return;if(sw.length&&sw[sw.length-1].plot===b.dataset.p)return;sw.push({ts:Date.now(),plot:b.dataset.p});SV('lr_sw',sw);render()};
+$('#clrsw').onclick=()=>{if(confirm('Clear the plot switch log? Existing readings will become unassigned.')){sw=[];SV('lr_sw',sw);feeds.forEach(f=>f.p=null);render()}};
+$('#save').onclick=()=>{cfg={key:$('#key').value.trim(),results:parseInt($('#nres').value)||500};SV('lr_cfg',cfg);load()};
+$('#rApply').onclick=()=>{const s=$('#rFrom').value,e=$('#rTo').value;if(!s||!e||s>e){alert('Choose a valid From and To date.');return}range={s,e};load()};
+$('#rClear').onclick=()=>{range=null;$('#rFrom').value=$('#rTo').value='';load()};
+$('#rPer').onchange=rRep;
+$('#x1').onclick=()=>csv('sensor_readings.csv',['timestamp','soil_moisture_pct','rain_detected','light_bright','plot'],feeds.map(f=>[f.t.toISOString(),f.m,f.r,f.l,f.p||'']));
+$('#x2').onclick=()=>csv('summary_'+($('#rPer').value==='w'?'weekly':'daily')+'.csv',SH,sumRows());
+$('#x3').onclick=()=>csv('plot_report.csv',['Plot'].concat(SH.slice(1)),plotRows());
+$('#x4').onclick=()=>csv('manual_observations.csv',['date','plot','growth','ground_cover','coverage_pct','survival_pct','remarks'],obs.map(o=>[o.date,o.plot,o.grow,o.ground,o.cov,o.surv,o.rem]));
+$('#tl').onclick=e=>{const id=e.target.dataset.del;if(id&&confirm('Delete this observation?')){obs=obs.filter(o=>o.id!=id);SV('lr_obs',obs);render()}};
+function shrink(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,560/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.65))};i.onerror=()=>res(null);i.src=r.result};r.onerror=()=>res(null);r.readAsDataURL(file)})}
+$('#oSave').onclick=async()=>{
+  const n=v=>v===''?null:Math.min(100,Math.max(0,+v));
+  const date=$('#oDate').value;if(!date){alert('Enter the observation date.');return}
+  const f=$('#oPhoto').files[0];const img=f?await shrink(f):null;
+  obs.push({id:Date.now(),date,plot:$('#oPlot').value,grow:$('#oGrow').value,ground:$('#oGround').value,cov:n($('#oCov').value),surv:n($('#oSurv').value),rem:$('#oRem').value.trim(),img});
+  if(!SV('lr_obs',obs)){obs.pop();return}
+  ['oCov','oSurv','oRem','oPhoto'].forEach(i=>$('#'+i).value='');render()};
+
+/* ---------- start ---------- */
+go('dash');load();
+setInterval(()=>{next--;if(next<=0)load();$('#cd').textContent='Next refresh in '+Math.max(next,0)+' s.';refreshStatus();if(view==='dash')rDash()},1000);
+</script>
+</body>
+</html>
